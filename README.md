@@ -1,64 +1,73 @@
-# Sistema de Gestión de Productos — Java web + JDBC + MySQL
+# Sistema de Gestión de Productos
 
-**Versión web de demostración:** el usuario puede registrar, listar, buscar, actualizar y eliminar productos desde el navegador. Los datos se conservan en MySQL.
+Este proyecto lo desarrollé para el taller de persistencia de datos en Java. La idea era crear un programa que permitiera llevar un registro de productos y guardar la información en una base de datos, de manera que no se perdiera al cerrar la aplicación.
 
-> El enlace público solo existirá después de desplegar la aplicación en un alojamiento. GitHub por sí solo no ejecuta Java ni MySQL.
+Primero hice una versión que se manejaba desde la consola. Después la adapté a una página web para que se pudiera utilizar desde cualquier computador, sin necesidad de instalar Java o MySQL.
 
-## Tecnología
-- Java 17+ (proyecto compilado para Java 17)
-- Servidor HTTP incluido en el JDK (`HttpServer`), sin añadir Spring Boot
-- JDBC + MySQL Connector/J (gestión de dependencias con Maven)
-- HTML/CSS renderizado desde Java (sin cliente de compilación separado)
-- Dockerfile multi-etapa para despliegue en Railway u otro proveedor compatible
+## Probar el sistema
 
-## Clases
-- `Producto.java`: modelo de producto original.
-- `ProductoDAO.java`: las operaciones SQL CRUD originales (consultas parametrizadas).
-- `ConexionBD.java`: datos de conexión mediante variables de entorno.
-- `Main.java`: se conserva la versión de consola original.
-- `WebMain.java`: nueva interfaz web y servidor HTTP para las operaciones CRUD.
+**Enlace a la aplicación:** https://gestion-productos-java.onrender.com
 
-## 1. Crear base de datos local
-En la conexión local de MySQL Workbench, ejecutar `sql/crear_base_datos.sql`.
+Desde ese enlace se puede entrar al sistema y probar sus funciones directamente en el navegador. Como está alojado en un servicio gratuito, es posible que tarde un poco en abrir cuando lleva tiempo sin utilizarse.
 
-## 2. Configurar conexión en PowerShell
-En la terminal donde vas a ejecutar Maven:
+## ¿Qué permite hacer?
 
-```powershell
-$env:DB_URL = "jdbc:mysql://127.0.0.1:3307/gestion_productos"
-$env:DB_USER = "root"
-$env:DB_PASSWORD = [System.Net.NetworkCredential]::new("", (Read-Host -AsSecureString "Contraseña MySQL")).Password
-```
+- **Registrar productos** con código, nombre, descripción, precio y cantidad.
+- **Consultar** los productos que están guardados.
+- **Buscar** por código o por una parte del nombre.
+- **Actualizar** la descripción, el precio y la cantidad de un producto.
+- **Eliminar** productos que ya no se necesitan.
+- **Conservar los datos** al recargar la página o cerrar el navegador, porque se guardan en MySQL.
 
-3307 era tu puerto local; otras personas deben usar los datos de **su propio MySQL**. No subas contraseñas a GitHub.
+El sistema también valida algunos datos de los formularios, por ejemplo, para evitar campos vacíos y precios o cantidades negativos.
 
-## 3. Probar en tu computador
+## Tecnologías utilizadas
 
-```powershell
-mvn clean package
-java -jar target/SistemaGestionProductos-1.1.0.jar
-```
+- **Java:** lógica principal de la aplicación.
+- **JDBC y MySQL Connector/J:** conexión entre Java y la base de datos.
+- **MySQL:** almacenamiento de los productos.
+- **Maven:** compilación y gestión de dependencias.
+- **HTML y CSS:** presentación de la interfaz web.
+- **Servidor HTTP de Java:** permite utilizar el sistema desde un navegador.
+- **GitHub:** repositorio del código.
+- **Render:** alojamiento de la aplicación web.
+- **Aiven:** alojamiento de MySQL en Internet.
 
-Abrir **http://localhost:8080** en un navegador. Para detener el servidor, `Ctrl+C`.
+## ¿Cómo funciona la persistencia?
 
-También puedes iniciar la versión web con `mvn exec:java` y conservar la versión de consola con `mvn exec:java "-Dexec.mainClass=com.taller.productos.Main"`.
+Cuando se registra, modifica o elimina un producto, Java realiza la operación correspondiente en MySQL. Por eso la información no depende de que la página permanezca abierta: al volver a entrar, el sistema consulta los datos guardados en la base de datos.
 
-La aplicación escucha en `0.0.0.0` y usa la variable de entorno `PORT`, definida automáticamente por muchas plataformas de alojamiento. La tabla `productos` se crea si no existe dentro de la base ya seleccionada.
+Durante el desarrollo probé el registro y la consulta tanto desde la aplicación como desde MySQL Workbench, primero con una base de datos local y después con la base de datos de Aiven.
 
-## 4. Publicar con GitHub + Railway
-1. Subir el contenido de esta carpeta a un repositorio GitHub, **sin** archivos `.env` ni credenciales.
-2. Crear un proyecto en Railway, agregar un servicio web desde ese repositorio. Railway detectará el `Dockerfile`.
-3. Crear un servicio MySQL en Railway.
-4. En **Variables** del servicio web, configurar `DB_URL`, `DB_USER`, `DB_PASSWORD` utilizando los valores y referencias del servicio MySQL de Railway. La URL JDBC debe incluir el host, puerto y nombre de la base MySQL de Railway, no `localhost`.
-5. Habilitar un dominio público para el servicio web.
-6. Abrir la URL, registrar un producto, cerrar el navegador, volver a entrar y consultar los datos.
-7. Pegar la URL pública en la primera sección del `README.md` del repositorio.
+## Archivos principales
 
-> Se requieren cuentas propias, activación del despliegue y un plan/cuota suficiente para mantener la aplicación y MySQL en línea. Este ZIP no publica automáticamente el proyecto.
+- `Main.java`: versión original por consola.
+- `WebMain.java`: servidor e interfaz web.
+- `ConexionBD.java`: conexión con MySQL.
+- `Producto.java`: datos de cada producto.
+- `ProductoDAO.java`: operaciones sobre la base de datos.
+- `sql/crear_base_datos.sql`: creación de la base de datos y la tabla.
+- `pom.xml`: configuración de Maven.
+- `Dockerfile`: despliegue de la aplicación.
 
-## Importante — seguridad
-- Las contraseñas solo se leen de variables de entorno; no se entregan dentro del código.
-- Las sentencias JDBC siguen utilizando `PreparedStatement`.
-- Los campos se validan en el servidor, y el HTML escapa texto proporcionado por el usuario.
-- Los formularios POST usan un token antifalsificación asociado a una cookie SameSite.
-- **Esta es una demo educativa sin inicio de sesión.** Cualquier persona que conozca la URL puede crear, modificar y eliminar los productos de demostración. No la uses con información real o sensible; para producción, agregar autenticación y roles.
+## Ejecutarlo en un computador
+
+Para trabajar con el código de forma local se necesita Java 17 o superior, Maven y una base de datos MySQL.
+
+1. Crear la base de datos y la tabla ejecutando `sql/crear_base_datos.sql` en MySQL.
+2. Configurar las variables de entorno `DB_URL`, `DB_USER` y `DB_PASSWORD` según la instalación de MySQL.
+3. Desde la carpeta que contiene `pom.xml`, ejecutar:
+
+    `mvn clean package`
+
+    `java -jar target/SistemaGestionProductos-1.1.0.jar`
+
+4. Abrir `http://localhost:8080` en el navegador.
+
+La contraseña de la base de datos no está incluida en el repositorio. En la versión publicada, la conexión se configura de manera privada desde el servicio de alojamiento.
+
+## Nota sobre la versión en línea
+
+El enlace web es una demostración académica. No tiene cuentas de usuario, así que cualquier persona que entre puede agregar, modificar o eliminar los productos de prueba. Se recomienda no utilizar información personal ni datos importantes.
+
+La aplicación y la base de datos usan servicios gratuitos, por lo que su disponibilidad puede depender de los límites y períodos de inactividad de esos servicios.
